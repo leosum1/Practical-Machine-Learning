@@ -3,13 +3,12 @@ title: Practical Machine Learning Project
 author: "Nicolas"
 output:
   html_document:
-    fig_height: 9
-    fig_width: 9
+    fig_height: 10
+    fig_width: 10
 ---
 
-## Introduction  
+## Get and Clean Data  
 In this project, we are using data from the accelerometers on the belt, forearm, arm, and dumbell of six participants to predict how well they did the exercise.  
-
 ```{r, cache = T}
 library(caret)
 library(rpart)
@@ -18,31 +17,28 @@ library(randomForest)
 library(corrplot)
 ```
 ### Download the Data
-```{r, cache = T}
+```{r, }
 trainUrl <-"https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
 testUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
 trainCSV <- "./pml-training.csv"
 testCSV  <- "./pml-testing.csv"
-if (!file.exists(trainFile)) {
-  download.file(trainUrl, destfile=trainCSVe, method="curl")
+if (!file.exists(trainCSV)) {
+  download.file(trainUrl, destfile=trainCSV, method="curl")
 }
-if (!file.exists(testFile)) {
+if (!file.exists(testCSV)) {
   download.file(testUrl, destfile=testCSV, method="curl")
 }
 ```  
 ### Read the Data
-Read the two csv files  
 ```{r, cache = T}
-trainRaw <- read.csv("./data/pml-training.csv")
-testRaw <- read.csv("./data/pml-testing.csv")
+trainRaw <- read.csv("./pml-training.csv")
+testRaw <- read.csv("./pml-testing.csv")
 dim(trainRaw)
 dim(testRaw)
 ```
-The training dataset contains 19622 observations and 160 variables, while the testing dataset contains 20 observations and 160 variables. 
-The "classe" variable in the training dataset is the outcome to predict. 
-
+The training dataset contains 19622 observations and 160 variables, while the testing dataset contains 20 observations and 160 variables. The "classe" variable in the training dataset is the outcome to predict. 
 ### Clean the data
-Let's clean the data; Remove observations with missing values and not useful variables.
+Remove observations with missing values and non useful variables.
 ```{r, cache = T}
 sum(complete.cases(trainRaw))
 ```
@@ -62,10 +58,11 @@ testRemove <- grepl("^X|timestamp|window", names(testRaw))
 testRaw <- testRaw[, !testRemove]
 testCleaned <- testRaw[, sapply(testRaw, is.numeric)]
 ```
-The clean training dataset contains 19622 observations and 53 variables. The testing dataset contains 20 observations and 53 variables. 
-
+The clean training dataset contains 19622 observations and 53 variables. 
+The testing dataset contains 20 observations and 53 variables. 
 ### Split the training data
-Let's split the clean training dataset into training dataset at 70% and a validation dataset at 30%. The validation dataset will be used to conduct cross validation before the testing dataset.  
+Let's split the clean training dataset into training dataset at 70% and a validation dataset at 30%. 
+The validation dataset will be used to conduct cross validation before the testing dataset.  
 ```{r, cache = T}
 set.seed(22519) # For reproducibile purpose
 inTrain <- createDataPartition(trainCleaned$classe, p=0.70, list=F)
@@ -80,20 +77,20 @@ controlRf <- trainControl(method="cv", 5)
 modelRf <- train(classe ~ ., data=trainData, method="rf", trControl=controlRf, ntree=250)
 modelRf
 ```
-Estimate the performance of the model on the validation data set.  
+Estimate the performance of the model on the validation dataset.  
 ```{r, cache = T}
 predictRf <- predict(modelRf, valData)
-confusionMatrix(testData$classe, predictRf)
+confusionMatrix(valData$classe, predictRf)
 ```
 ```{r, cache = T}
 accuracy <- postResample(predictRf, valData$classe)
 accuracy
-oose <- 1 - as.numeric(confusionMatrix(valData$classe, predictRf)$overall[1])
-oose
+err <- 1 - as.numeric(confusionMatrix(valData$classe, predictRf)$overall[1])
+err
 ```
 The estimated accuracy of the model is 99.42% and the estimated out of sample error is 0.58%.
 
-## Predicting on the Test Dataset
+## Predicting on Test Dataset
 Apply the model to the original testing dataset.  
 ```{r, cache = T}
 result <- predict(modelRf, testCleaned[, -length(names(testCleaned))])
