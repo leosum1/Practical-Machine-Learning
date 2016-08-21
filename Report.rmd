@@ -10,6 +10,7 @@ output:
 ## Get and Clean Data  
 In this project, we are using data from the accelerometers on the belt, forearm, arm, and dumbell of six participants to predict how well they did the exercise.  
 ```{r, cache = T}
+library(knitr)
 library(caret)
 library(rpart)
 library(rpart.plot)
@@ -58,8 +59,6 @@ testRemove <- grepl("^X|timestamp|window", names(testRaw))
 testRaw <- testRaw[, !testRemove]
 testCleaned <- testRaw[, sapply(testRaw, is.numeric)]
 ```
-The clean training dataset contains 19622 observations and 53 variables. 
-The testing dataset contains 20 observations and 53 variables. 
 ### Split the training data
 Let's split the clean training dataset into training dataset at 70% and a validation dataset at 30%. 
 The validation dataset will be used to conduct cross validation before the testing dataset.  
@@ -88,7 +87,7 @@ accuracy
 err <- 1 - as.numeric(confusionMatrix(valData$classe, predictRf)$overall[1])
 err
 ```
-The estimated accuracy of the model is 99.42% and the estimated out of sample error is 0.58%.
+The estimated accuracy of the model is 99.38% and the estimated out of sample error is 0.61%.
 
 ## Predicting on Test Dataset
 Apply the model to the original testing dataset.  
@@ -98,13 +97,13 @@ result
 ```  
 
 ## Figures:
-Correlation Matrix Visualization  
-```{r, cache = T}
-corrPlot <- cor(trainData[, -length(names(trainData))])
-corrplot(corrPlot, method="color")
-```
 Decision Tree Visualization
 ```{r, cache = T}
 treeModel <- rpart(classe ~ ., data=trainData, method="class")
-prp(treeModel) # fast plot
+prp(treeModel)
+```
+Matrix Visualization of Correlation  
+```{r, cache = T}
+corrPlot <- cor(trainData[, -length(names(trainData))])
+corrplot(corrPlot, method="color")
 ```
